@@ -1,0 +1,27 @@
+{
+  "name": "sagamegadrive",
+  "version": "0.1.0-beta.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/josephbuchma/sagamegadrive.git"
+  },
+  "keywords": [
+    "reudx-saga",
+    "reactjs"
+  ],
+  "author": "Joseph Buchma",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/josephbuchma/sagamegadrive/issues"
+  },
+  "homepage": "https://github.com/josephbuchma/sagamegadrive#readme",
+  "dependencies": {
+    "change-case": "^3.0.2",
+    "redux-saga": "^0.16.0"
+  }
+}
