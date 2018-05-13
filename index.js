@@ -1,6 +1,5 @@
 // @flow
-
-import { call, fork, put, take, select, takeEvery } from 'redux-saga/effects'
+import { call, fork, put, select, takeEvery } from 'redux-saga/effects'
 import changeCase from 'change-case'
 
 type Action = {
@@ -10,6 +9,26 @@ type Action = {
   func: GeneratorFunction,
   // $FlowFixMe
   args: Arguments
+}
+
+type ActionsAndTypes = {
+  Actions: {[string]: ()=>Action},
+  Types: {[string]: string}
+}
+
+const makeActionCreator = (type, actionCreator) => function(): Action {
+  return {
+    type,
+    isSagaMegaDriveAction: true,
+    func: actionCreator,
+    args: arguments
+  }
+}
+
+
+const ActionTypes = {
+  SET_STATE: 'SAGAMEGADRIVE/SET_STATE',
+  RESET_STATE: 'SAGAMEGADRIVE/RESET_STATE',
 }
 
 // completed generates name of action that will be dispatched when
@@ -22,6 +41,7 @@ export const completed = (action: {type: string}|string) => action.type ? `${act
 // $FlowFixMe
 export const error = (action: {type: string}|string) => action.type ? `${action.type}@SMD/ERROR` : `${action}@SMD/ERROR`
 
+
 function * handleAction (action: Action) {
   try {
     yield call(action.func, ...action.args)
@@ -31,43 +51,6 @@ function * handleAction (action: Action) {
   }
 }
 
-type ActionsAndTypes = {
-  Actions: {[string]: ()=>Action},
-  Types: {[string]: string}
-}
-
-// makeActionCreators is a shortcut for makeActionCreator.
-export const makeActionCreators = (actionsPrefix: string, actionCreators: {[string]: GeneratorFunction}): ActionsAndTypes => {
-  if (!!actionsPrefix && !actionsPrefix.endsWith('_')) {
-    actionsPrefix += '_'
-  }
-  let Actions = {...actionCreators}
-  let Types = {}
-  for (let a in actionCreators) {
-    let ac = actionCreators[a]
-    let t = changeCase.snake(a).toUpperCase()
-    let tp = actionsPrefix+t
-    if (ac.constructor.name === 'Function') {
-      Actions[a] = actionCreators[a]
-    } else if (ac.constructor.name === 'GeneratorFunction') {
-      Actions[a] = makeActionCreator(tp, ac)
-    } else {
-      throw new Error("Unsupported action creator type: "+ac.constructor.name)
-    }
-    Types[a] = tp
-    Types[t] = tp
-  }
-  return {Actions, Types}
-}
-
-export const makeActionCreator = (type: string, actionCreator: Function) => function(): Action {
-  return {
-    type,
-    isSagaMegaDriveAction: true,
-    func: actionCreator,
-    args: arguments
-  }
-}
 
 // saga is a root saga of sagamegadrive.
 // fork it in the root saga of your application.
@@ -75,27 +58,80 @@ export function * saga (): any {
   yield takeEvery(a=>a.isSagaMegaDriveAction, handleAction)
 }
 
-export const ActionTypes = {
-  REDUCE: 'SAGAMEGADRIVE/REDUCE',
-  SET_STATE: 'SAGAMEGADRIVE/SET_STATE',
-  RESET_STATE: 'SAGAMEGADRIVE/RESET_STATE',
+export type SagaMegaDrive = {
+  reducer: (state: Object, action: Object) => Object,
+  setState: (update: Object|(state: Object, globalState: Object)=>Object) => void,
+  resetState: (newState: Object) => void,
+  makeActionCreators: (actionCreators: {[string]: GeneratorFunction}) => ActionsAndTypes,
 }
 
-// wrapReducer ...
-export const wrapReducer = (reducer: Function) => (state: Object, action: Object) => {
-  switch (action.type) {
-  case ActionTypes.REDUCE:
-    return action.reduce(state)
-  case ActionTypes.SET_STATE:
-    if (action.root) {
-      return {...state, [action.root]: {...state[action.root], ...action.patch}}
-    }
-    return {...state, ...action.patch}
-  case ActionTypes.RESET_STATE:
-    if (action.root) {
-      return {...state, [action.root]: {...action.newState}}
-    }
-    return {...action.newState}
+const sagaMegaDrive = (stateKey: string, initialState: Object): SagaMegaDrive => {
+  const actionPrefix = changeCase.snake(stateKey).toUpperCase()
+  const actionTypes = {
+    SET_STATE: `${actionPrefix}@${ActionTypes.SET_STATE}`,
+    RESET_STATE: `${actionPrefix}@${ActionTypes.RESET_STATE}`
   }
-  return reducer(state, action)
+
+  return {
+    // reducer must be mounted in combineReducers at the same key as provided to constructor.
+    reducer: (state: Object, action: Object) => {
+      const { SET_STATE, RESET_STATE } = actionTypes
+      if (!state) {
+        state = initialState
+      }
+      switch (action.type) {
+      case SET_STATE:
+        return {...state, ...action.patch}
+      case RESET_STATE:
+        return {...action.newState}
+      }
+      return state
+    },
+
+    // setState saga effect
+    setState: (update: Object|(state: Object, globalState: Object)=>Object) => {
+      const { SET_STATE } = actionTypes
+      return call(function*(){
+        let globalState = yield select()
+        let state = globalState[stateKey]
+        let patch
+        if (typeof update !== 'function') {
+          patch = update
+        } else {
+          patch = update(state, globalState)
+        }
+        if (patch) yield put({type: SET_STATE, patch})
+      })
+    },
+
+    // resetState saga effect
+    resetState: (newState: Object) => {
+      return put({type: actionTypes.RESET_STATE, newState})
+    },
+
+    // makeActionCreators translates given map of generator functions into action creators.
+    // Action type name will be generated from key (converted to SCREAMING_SNAKE_CASE)
+    makeActionCreators: (actionCreators: {[string]: GeneratorFunction}): ActionsAndTypes => {
+      const actionsPrefix =  actionPrefix+'_'
+      let Actions = {...actionCreators}
+      let Types = {}
+      for (let a in actionCreators) {
+        let ac = actionCreators[a]
+        let t = changeCase.snake(a).toUpperCase()
+        let tp = actionsPrefix+t
+        if (ac.constructor.name === 'Function') {
+          Actions[a] = actionCreators[a]
+        } else if (ac.constructor.name === 'GeneratorFunction') {
+          Actions[a] = makeActionCreator(tp, ac)
+        } else {
+          throw new Error("Unsupported action creator type: "+ac.constructor.name)
+        }
+        Types[a] = tp
+        Types[t] = tp
+      }
+      return {Actions, Types}
+    }
+  }
 }
+
+export default sagaMegaDrive

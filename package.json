@@ -22,6 +22,7 @@
   "homepage": "https://github.com/josephbuchma/sagamegadrive#readme",
   "dependencies": {
     "change-case": "^3.0.2",
+    "redux": "^4.0.0",
     "redux-saga": "^0.16.0"
   }
 }
