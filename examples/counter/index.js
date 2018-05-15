@@ -25,7 +25,7 @@ const INITIAL_STATE = {
   loading: false
 }
 
-const { reducer, setState, resetState, makeActionCreators } = sagamegadrive('counter', INITIAL_STATE)
+const { reducer, setState, resetState, createActions } = sagamegadrive('counter', INITIAL_STATE)
 
 // create the store
 const store = createStore(combineReducers({counter: reducer}), middleware)
@@ -36,7 +36,7 @@ function * rootSaga () {
   yield fork(sagamegadriveSaga)
 }
 
-const { Actions, Types } = makeActionCreators({
+const { Actions, Types } = createActions({
   reset: function * () { yield resetState(INITIAL_STATE) },
   increment: function * () { yield setState((s) => ({ value: s.value + 1 })) },
   decrement: function * () { yield setState((s) => ({ value: s.value - 1 })) },
