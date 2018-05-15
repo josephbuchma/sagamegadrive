@@ -71,7 +71,7 @@ export type SagaMegaDrive = {
   reducer: (state: Object, action: Object) => Object,
   setState: (update: Object|(state: Object, globalState: Object)=>Object) => void,
   resetState: (newState: Object) => void,
-  makeActionCreators: (actionCreators: {[string]: GeneratorFunction}) => ActionsAndTypes,
+  createActions: (funcs: {[string]: GeneratorFunction}) => ActionsAndTypes,
 }
 
 const sagaMegaDrive = (stateKey: string, initialState: Object): SagaMegaDrive => {
@@ -83,7 +83,7 @@ const sagaMegaDrive = (stateKey: string, initialState: Object): SagaMegaDrive =>
 
   return {
     // reducer must be mounted in combineReducers at the same key as provided to constructor.
-    reducer: (state: Object, action: Object) => {
+    reducer: (state: Object, action: Object): Object => {
       const { SET_STATE, RESET_STATE } = actionTypes
       if (!state) {
         state = initialState
@@ -118,18 +118,19 @@ const sagaMegaDrive = (stateKey: string, initialState: Object): SagaMegaDrive =>
       return put({type: actionTypes.RESET_STATE, newState})
     },
 
-    // makeActionCreators translates given map of generator functions into action creators.
+    // createActions translates given map of generator functions into action creators.
+    // regular functions are not interpreted.
     // Action type name will be generated from key (converted to SCREAMING_SNAKE_CASE)
-    makeActionCreators: (actionCreators: {[string]: GeneratorFunction}): ActionsAndTypes => {
+    createActions: (funcs: {[string]: GeneratorFunction|Function}): ActionsAndTypes => {
       const actionsPrefix =  actionPrefix+'_'
-      let Actions = {...actionCreators}
+      let Actions = {...funcs}
       let Types = {}
-      for (let a in actionCreators) {
-        let ac = actionCreators[a]
+      for (let a in funcs) {
+        let ac = funcs[a]
         let t = changeCase.snake(a).toUpperCase()
         let tp = actionsPrefix+t
         if (ac.constructor.name === 'Function') {
-          Actions[a] = actionCreators[a]
+          Actions[a] = funcs[a]
         } else if (ac.constructor.name === 'GeneratorFunction') {
           Actions[a] = makeActionCreator(tp, ac)
         } else {
