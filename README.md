@@ -2,6 +2,12 @@
 
 Experimental reducer-less 100%-redux-saga-driven reactjs experience.
 
+### Install
+
+```
+npm install --save sagamegadrive
+```
+
 ### Examples
 
 - [Counter](https://github.com/josephbuchma/sagamegadrive/blob/master/examples/counter/index.js):
