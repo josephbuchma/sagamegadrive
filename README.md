@@ -2,4 +2,10 @@
 
 Experimental reducer-less 100%-redux-saga-driven reactjs experience.
 
-See [example](https://github.com/josephbuchma/sagamegadrive/blob/master/examples/counter/index.js)
+### Examples
+
+- [Counter](https://github.com/josephbuchma/sagamegadrive/blob/master/examples/counter/index.js):
+  - Clone this repo
+  - `cd` examples/counter
+  - `npm install && npm run build && npm run serve`
+  - Open browser at `localhost:5000`
