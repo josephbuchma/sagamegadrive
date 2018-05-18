@@ -1,5 +1,6 @@
 
 import { createStore, applyMiddleware, compose, combineReducers, bindActionCreators } from 'redux'
+import logger from 'redux-logger'
 import createSagaMiddleware from 'redux-saga'
 import { fork, call } from 'redux-saga/effects'
 
@@ -11,10 +12,10 @@ import ReactDOM from 'react-dom'
 import { connect, Provider } from 'react-redux'
 
 const sagaMiddleware = createSagaMiddleware()
-let middleware = applyMiddleware(sagaMiddleware)
+let middleware = applyMiddleware(sagaMiddleware, logger)
 
 // add the redux dev tools
-if (process.env.NODE_ENV !== 'production' && window.devToolsExtension) {
+if (window.devToolsExtension) {
   middleware = compose(middleware, window.devToolsExtension())
 }
 
@@ -35,9 +36,9 @@ function * rootSaga () {
 }
 
 const { Actions, Types } = createActions({
-  reset: function * () { yield resetState(INITIAL_STATE) },
-  increment: function * () { yield setState((s) => ({ value: s.value + 1 })) },
-  decrement: function * () { yield setState((s) => ({ value: s.value - 1 })) },
+  reset: () => resetState(INITIAL_STATE),
+  increment: () => setState((s) => ({ value: s.value + 1 })),
+  decrement: () => setState((s) => ({ value: s.value - 1 })),
   incrementAsync: function * (delay) {
     yield setState({loading: true})
     yield call(() => new Promise(resolve => setTimeout(resolve, delay)))
@@ -47,7 +48,8 @@ const { Actions, Types } = createActions({
     yield setState({loading: true})
     yield call(() => new Promise(resolve => setTimeout(resolve, delay)))
     yield setState((s) => ({ value: s.value - 1, loading: false }))
-  }
+  },
+  exampleRegularAction: () => ({type: 'EXAMPLE_ACTION'})
 })
 
 class CounterApp extends Component {
@@ -59,6 +61,7 @@ class CounterApp extends Component {
         <button onClick={this.props.decrement}>Decrement</button>
         <button onClick={() => this.props.incrementAsync(1000)}>Increment Async</button>
         <button onClick={() => this.props.decrementAsync(1000)}>Decrement Async</button>
+        <button onClick={this.props.exampleRegularAction}>Regular action</button>
         { this.props.loading ? <span>Loading...</span> : null }
       </div>
     )
