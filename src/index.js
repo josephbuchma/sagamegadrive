@@ -22,16 +22,10 @@ type ActionsAndTypes = {
 const makeActionCreator = (type, actionCreator) => function(): Action {
   return {
     type,
+    args: arguments,
     isSagaMegaDriveAction: true,
-    func: actionCreator,
-    args: arguments
+    func: actionCreator
   }
-}
-
-
-const ActionTypes = {
-  SET_STATE: 'SAGAMEGADRIVE/SET_STATE',
-  RESET_STATE: 'SAGAMEGADRIVE/RESET_STATE',
 }
 
 // completed generates name of action that will be dispatched when
@@ -40,7 +34,7 @@ const ActionTypes = {
 //     yield put(Actions.myAction())
 //     yield take(completed(Types.MY_ACTION))
 // $FlowFixMe
-export const completed = (action: {type: string}|string) => action.type ? `${action.type}@SMD/COMPLETED` : `${action}@SMD/COMPLETED`
+export const completed = (action: {type: string}|string) => action.type ? `${action.type}_COMPLETED@SAGAMEGADRIVE` : `${action}_COMPLETED@SAGAMEGADRIVE`
 
 // error generates name of action that will be dispatched when
 // given action is finished with error.
@@ -53,8 +47,12 @@ export const error = (action: {type: string}|string) => action.type ? `${action.
 
 function * handleAction (action: Action) {
   try {
-    yield call(action.func, ...action.args)
-    yield put({type: completed(action)})
+    let result = yield call(action.func, ...action.args)
+    let a = { type: completed(action) }
+    if (result) {
+      a.result = result
+    }
+    yield put(a)
   } catch (err) {
     yield put({type: error(action), error: err})
   }
@@ -74,11 +72,11 @@ export type SagaMegaDrive = {
   createActions: (funcs: {[string]: GeneratorFunction}) => ActionsAndTypes,
 }
 
-const sagaMegaDrive = (stateKey: string, initialState: Object): SagaMegaDrive => {
+const SagaMegaDrive = (stateKey: string, initialState: Object): SagaMegaDrive => {
   const actionPrefix = changeCase.snake(stateKey).toUpperCase()
   const actionTypes = {
-    SET_STATE: `${actionPrefix}@${ActionTypes.SET_STATE}`,
-    RESET_STATE: `${actionPrefix}@${ActionTypes.RESET_STATE}`
+    SET_STATE: `${actionPrefix}_SET_STATE@SAGAMEGADRIVE`,
+    RESET_STATE: `${actionPrefix}_RESET_STATE@SAGAMEGADRIVE`
   }
 
   return {
@@ -130,7 +128,16 @@ const sagaMegaDrive = (stateKey: string, initialState: Object): SagaMegaDrive =>
         let t = changeCase.snake(a).toUpperCase()
         let tp = actionsPrefix+t
         if (ac.constructor.name === 'Function') {
-          Actions[a] = funcs[a]
+          Actions[a] = () => {
+            let v = ac(...arguments)
+            if (v['@@redux-saga/IO']) {
+              return makeActionCreator(tp, function*(){ yield v })()
+            }
+            if (!v.type) {
+              v.type = tp
+            }
+            return v
+          }
         } else if (ac.constructor.name === 'GeneratorFunction') {
           Actions[a] = makeActionCreator(tp, ac)
         } else {
@@ -144,4 +151,4 @@ const sagaMegaDrive = (stateKey: string, initialState: Object): SagaMegaDrive =>
   }
 }
 
-export default sagaMegaDrive
+export default SagaMegaDrive
