@@ -1,6 +1,4 @@
 
-import 'babel-polyfill'
-
 import { createStore, applyMiddleware, compose, combineReducers, bindActionCreators } from 'redux'
 import createSagaMiddleware from 'redux-saga'
 import { fork, call } from 'redux-saga/effects'
