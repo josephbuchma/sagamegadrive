@@ -42,7 +42,7 @@ export const completed = (action: {type: string}|string) => action.type ? `${act
 //     yield put(Actions.myAction())
 //     let status = yield take([completed(Types.MY_ACTION), error(Types.MY_ACTION)])
 // $FlowFixMe
-export const error = (action: {type: string}|string) => action.type ? `${action.type}@SMD/ERROR` : `${action}@SMD/ERROR`
+export const error = (action: {type: string}|string) => action.type ? `${action.type}_ERROR@SAGAMEGADRIVE` : `${action}_ERROR@SAGAMEGADRIVE`
 
 
 function * handleAction (action: Action) {
