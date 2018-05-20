@@ -49,7 +49,8 @@ const { Actions, Types } = createActions({
     yield call(() => new Promise(resolve => setTimeout(resolve, delay)))
     yield setState((s) => ({ value: s.value - 1, loading: false }))
   },
-  exampleRegularAction: () => ({type: 'EXAMPLE_ACTION'})
+  exampleRegularAction: (foo) => ({type: 'EXAMPLE_ACTION', foo}),
+  exampleInlinedEffect: (t) => call(() => new Promise(r => setTimeout(r, t)))
 })
 
 class CounterApp extends Component {
@@ -62,6 +63,7 @@ class CounterApp extends Component {
         <button onClick={() => this.props.incrementAsync(1000)}>Increment Async</button>
         <button onClick={() => this.props.decrementAsync(1000)}>Decrement Async</button>
         <button onClick={this.props.exampleRegularAction}>Regular action</button>
+        <button onClick={() => this.props.exampleInlinedEffect(100)}>Effect action</button>
         { this.props.loading ? <span>Loading...</span> : null }
       </div>
     )

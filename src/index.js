@@ -128,10 +128,10 @@ const SagaMegaDrive = (stateKey: string, initialState: Object): SagaMegaDrive =>
         let t = changeCase.snake(a).toUpperCase()
         let tp = actionsPrefix+t
         if (ac.constructor.name === 'Function') {
-          Actions[a] = () => {
+          Actions[a] = function () {
             let v = ac(...arguments)
             if (v['@@redux-saga/IO']) {
-              return makeActionCreator(tp, function*(){ yield v })()
+              return makeActionCreator(tp, function*(){ yield v })(...arguments)
             }
             if (!v.type) {
               v.type = tp
