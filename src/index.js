@@ -48,7 +48,8 @@ export const error = (action: {type: string}|string) => action.type ? `${action.
 function * handleAction (action: Action) {
   try {
     let result = yield call(action.func, ...action.args)
-    let a = { type: completed(action) }
+    let a = {}
+    a.type = completed(action)
     if (result) {
       a.result = result
     }
@@ -72,7 +73,7 @@ export type SagaMegaDrive = {
   createActions: (funcs: {[string]: GeneratorFunction}) => ActionsAndTypes,
 }
 
-const SagaMegaDrive = (stateKey: string, initialState: Object): SagaMegaDrive => {
+const sagaMegaDrive = (stateKey: string, initialState: Object): SagaMegaDrive => {
   const actionPrefix = changeCase.snake(stateKey).toUpperCase()
   const actionTypes = {
     SET_STATE: `${actionPrefix}_SET_STATE@SAGAMEGADRIVE`,
@@ -151,4 +152,4 @@ const SagaMegaDrive = (stateKey: string, initialState: Object): SagaMegaDrive =>
   }
 }
 
-export default SagaMegaDrive
+export default sagaMegaDrive
