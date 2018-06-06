@@ -1,5 +1,5 @@
 // @flow
-import { call, fork, put, select, takeEvery } from 'redux-saga/effects'
+import { call, fork, put, select, takeEvery, take } from 'redux-saga/effects'
 import changeCase from 'change-case'
 
 type Action = {
@@ -44,6 +44,21 @@ export const completed = (action: {type: string}|string) => action.type ? `${act
 // $FlowFixMe
 export const error = (action: {type: string}|string) => action.type ? `${action.type}_ERROR@SAGAMEGADRIVE` : `${action}_ERROR@SAGAMEGADRIVE`
 
+// run is a helper that dispatches given Action, waits for it's completion and returns result if there any.
+// It's basically same as using call with underlying Generator, but unlike call you can conveniently trace it in the log
+// as actual action is being dispatched.
+export function * run (action: Action): Generator<*, *, *> {
+  yield put(action)
+  if (!action.isSagaMegaDriveAction) {
+    console.log("WARNING: run has no effect when action is not a SagaMegaDrive Action. Provided action has been dispatched like regular action.")
+    return
+  }
+  let res = yield take(completed(action), error(action))
+  if (res.type === error(action)) {
+    throw res.error
+  }
+  return res.result
+}
 
 function * handleAction (action: Action) {
   try {

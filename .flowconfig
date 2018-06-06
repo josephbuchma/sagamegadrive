@@ -1,5 +1,8 @@
 [ignore]
 
+lib/index.js.flow
+
+
 [include]
 
 [libs]
