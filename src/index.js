@@ -83,7 +83,7 @@ export function * saga (): any {
 
 export type SagaMegaDrive = {
   reducer: (state: Object, action: Object) => Object,
-  setState: (update: Object|(state: Object, globalState: Object)=>Object) => void,
+  setState: (update: Object|(state: Object, globalState: Object)=>Object) => Object,
   resetState: (newState: Object) => void,
   createActions: (funcs: {[string]: GeneratorFunction}) => ActionsAndTypes,
 }
@@ -112,7 +112,7 @@ const sagaMegaDrive = (stateKey: string, initialState: Object): SagaMegaDrive =>
     },
 
     // setState saga effect
-    setState: (update: Object|(state: Object, globalState: Object)=>Object) => {
+    setState: (update: Object|(state: Object, globalState: Object)=>Object): Object => {
       const { SET_STATE } = actionTypes
       return call(function*(){
         let globalState = yield select()
@@ -147,7 +147,7 @@ const sagaMegaDrive = (stateKey: string, initialState: Object): SagaMegaDrive =>
           Actions[a] = function () {
             let v = ac(...arguments)
             if (v['@@redux-saga/IO']) {
-              return makeActionCreator(tp, function*(){ yield v })(...arguments)
+              return makeActionCreator(tp, function*(){ return ( yield v ) })(...arguments)
             }
             if (!v.type) {
               v.type = tp
